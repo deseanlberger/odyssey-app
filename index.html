@@ -5,7 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Odyssey | Personal Performance</title>
+<meta name="apple-mobile-web-app-title" content="Fit">
+<title>Fit — Odyssey Performance</title>
+<script>
+(function(){
+  var c=document.createElement('canvas');
+  c.width=c.height=180;
+  var x=c.getContext('2d');
+  x.fillStyle='#0a0f1a';
+  x.fillRect(0,0,180,180);
+  x.fillStyle='#C9A228';
+  x.font='bold 118px -apple-system, Arial';
+  x.textAlign='center';
+  x.textBaseline='middle';
+  x.fillText('F',90,96);
+  var l=document.createElement('link');
+  l.rel='apple-touch-icon';
+  l.href=c.toDataURL('image/png');
+  document.currentScript.parentNode.appendChild(l);
+})();
+</script>
 <style>
   :root {
     --bg: #0a0f1a;
