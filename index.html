@@ -1352,16 +1352,12 @@ renderAll();
   }
 })();
 
-// ─── FOOD & TRAINING HISTORY SEED ───
-// v4 — added Apr 20 training session + deadlift PR
+// ─── FOOD SEED ───
 (function() {
   const SEED_V = 'v4';
   const APR19  = '2026-04-19';
   const APR20  = '2026-04-20';
-
   if (getStore('food_seed_version','') !== SEED_V) {
-
-    // ── FOOD ──
     setStore('meals_'+APR19, [
       { id: 1745100001, name: 'Ribeye steak 12oz', protein: 68, calories: 780, carbs: 0, fat: 54, slot: 'dinner', logged_at: APR19+'T18:00:00Z' },
       { id: 1745100002, name: 'Ribeye steak 12oz', protein: 68, calories: 780, carbs: 0, fat: 54, slot: 'dinner', logged_at: APR19+'T18:30:00Z' },
@@ -1370,41 +1366,40 @@ renderAll();
     setStore('meals_'+APR20, [
       { id: 1745200001, name: 'Beef, black bean & corn bowl (small portion)', protein: 50, calories: 520, carbs: 24, fat: 25, slot: 'lunch', logged_at: APR20+'T13:00:00Z' },
     ]);
-
-    // ── TRAINING — Apr 20 ──
-    // Deadlift 5 sets → top set 295 × 5 @ RPE 8 (superset w/ box jumps)
-    // Incline DB bench 45s × 4 × 8
-    // Pull-ups ~30 reps total (~4 sets)
-    // OHP 115–120 × ~25 reps total (~3 sets)
-    // Tricep pushdowns ~3 sets
-    // TRX rows ~3 sets
-    const sessionHistory = getStore('session_history', []);
-    const alreadyLogged = sessionHistory.find(s => s.date === APR20);
-    if (!alreadyLogged) {
-      sessionHistory.unshift({
-        date: APR20,
-        type: 'Lower / Full Body — Deadlift Focus',
-        sets_done: 25,
-        sets_total: 25,
-        feel: 'solid',
-        knee_pain_flag: false,
-        completed_at: APR20+'T16:00:00Z',
-        notes: 'Deadlift: 5 sets, top set 295×5 @RPE8 (superset w/ box jumps) | Incline DB bench: 45s × 4×8 | Pull-ups: ~30 reps total | OHP: 115–120 × ~25 reps | Tricep pushdowns: 3 sets | TRX rows: 3 sets',
-      });
-      setStore('session_history', sessionHistory);
-    }
-
-    // ── PR — Deadlift 295 × 5 ──
-    const prs = getStore('prs', []);
-    const dlPr = prs.find(p => p.lift === 'Deadlift');
-    if (!dlPr) {
-      prs.unshift({ lift: 'Deadlift', detail: '295 lbs × 5 reps @ RPE 8', date: APR20 });
-      setStore('prs', prs);
-    }
-
     setStore('food_seed_version', SEED_V);
-    renderAll();
   }
+})();
+
+// ─── TRAINING SEED ─── (separate version key — runs independently of food)
+(function() {
+  const TRAIN_V = 'v1';
+  const APR20   = '2026-04-20';
+  if (getStore('training_seed_version','') !== TRAIN_V) {
+    // Apr 20: Deadlift focus — 5 sets top set 295×5 @RPE8 (superset box jumps)
+    // Incline DB 45s 4×8 | Pull-ups ~30 reps | OHP 115-120 ~25 reps
+    // Tricep pushdowns 3 sets | TRX rows 3 sets
+    var hist = getStore('session_history', []);
+    hist = hist.filter(function(s){ return s.date !== APR20; }); // remove any duplicate
+    hist.unshift({
+      date: APR20,
+      type: 'Lower / Full Body — Deadlift Focus',
+      sets_done: 25,
+      sets_total: 25,
+      feel: 'solid',
+      knee_pain_flag: false,
+      completed_at: APR20+'T16:00:00Z',
+      notes: 'Deadlift: 5 sets, top set 295×5 @RPE8 (superset w/ box jumps) | Incline DB bench: 45s × 4×8 | Pull-ups: ~30 reps | OHP: 115–120 × ~25 reps | Tricep pushdowns: 3 sets | TRX rows: 3 sets',
+    });
+    setStore('session_history', hist);
+
+    var prs = getStore('prs', []);
+    prs = prs.filter(function(p){ return p.lift !== 'Deadlift'; }); // remove duplicate
+    prs.unshift({ lift: 'Deadlift', detail: '295 lbs × 5 reps @ RPE 8', date: APR20 });
+    setStore('prs', prs);
+
+    setStore('training_seed_version', TRAIN_V);
+  }
+  renderAll();
 })();
 </script>
 </body>
