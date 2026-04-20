@@ -8,6 +8,19 @@
 <meta name="apple-mobile-web-app-title" content="Fit">
 <title>Fit — Odyssey Performance</title>
 <script>
+// Force fresh load when app version changes — prevents stale PWA cache issues
+(function(){
+  var V='6';
+  if(localStorage.getItem('_appver')!==V){
+    localStorage.setItem('_appver',V);
+    if(!sessionStorage.getItem('_rel'+V)){
+      sessionStorage.setItem('_rel'+V,'1');
+      location.reload(true);
+    }
+  }
+})();
+</script>
+<script>
 (function(){
   var c=document.createElement('canvas');
   c.width=c.height=180;
