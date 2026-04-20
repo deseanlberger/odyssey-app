@@ -1351,6 +1351,31 @@ renderAll();
     renderAll();
   }
 })();
+
+// ─── FOOD HISTORY SEED ───
+// Seeds real logged meals for Apr 19 (yesterday) and Apr 20 (today)
+// Only writes if those dates have no data yet
+(function() {
+  const APR19 = '2026-04-19';
+  const APR20 = '2026-04-20';
+
+  if (!getStore('meals_'+APR19, []).length) {
+    setStore('meals_'+APR19, [
+      { id: 1745100001, name: 'Ribeye steak 12oz', protein: 68, calories: 780, carbs: 0, fat: 54, slot: 'dinner', logged_at: APR19+'T18:00:00Z' },
+      { id: 1745100002, name: 'Ribeye steak 12oz', protein: 68, calories: 780, carbs: 0, fat: 54, slot: 'dinner', logged_at: APR19+'T18:00:00Z' },
+      { id: 1745100003, name: 'Ninja Creami protein ice cream', protein: 40, calories: 400, carbs: 25, fat: 12, slot: 'snack', logged_at: APR19+'T20:00:00Z' },
+    ]);
+  }
+
+  if (!getStore('meals_'+APR20, []).length) {
+    setStore('meals_'+APR20, [
+      // Smaller bowl from the beef/black bean/corn pot (1 of 5 portions, slightly small)
+      { id: 1745200001, name: 'Beef & black bean bowl (pot meal)', protein: 50, calories: 520, carbs: 24, fat: 25, slot: 'lunch', logged_at: APR20+'T13:00:00Z' },
+    ]);
+  }
+
+  renderAll();
+})();
 </script>
 </body>
 </html>
