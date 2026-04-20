@@ -10,7 +10,7 @@
 <script>
 // Force fresh load when app version changes — prevents stale PWA cache issues
 (function(){
-  var V='7';
+  var V='8';
   if(localStorage.getItem('_appver')!==V){
     localStorage.setItem('_appver',V);
     if(!sessionStorage.getItem('_rel'+V)){
@@ -1310,9 +1310,10 @@ function renderStatsTab() {
   }
 
   // Steps history
+  const stepsHistEl = document.getElementById('steps-history');
   const stepsLog = getStepsLog();
-  if (stepsLog.length) {
-    document.getElementById('steps-history').innerHTML = stepsLog.slice().reverse().slice(0, 14).map(s => {
+  if (stepsHistEl && stepsLog.length) {
+    stepsHistEl.innerHTML = stepsLog.slice().reverse().slice(0, 14).map(s => {
       const pct = Math.min(100, Math.round((s.steps / s.goal) * 100));
       const hit = s.steps >= s.goal;
       return `<div class="stat-row">
@@ -1323,8 +1324,8 @@ function renderStatsTab() {
         </span>
       </div>`;
     }).join('');
-  } else {
-    document.getElementById('steps-history').innerHTML = '<div class="text-dim text-sm">No steps logged yet.</div>';
+  } else if (stepsHistEl) {
+    stepsHistEl.innerHTML = '<div class="text-dim text-sm">No steps logged yet.</div>';
   }
 
   // PRs
@@ -1380,20 +1381,28 @@ function saveSteps() {
 }
 
 function renderStepsCard() {
+  // Guard: old cached versions may not have these elements
+  const valEl = document.getElementById('td-steps-val');
+  if (!valEl) return;
+  const goalEl  = document.getElementById('td-steps-goal');
+  const barEl   = document.getElementById('td-steps-bar');
+  const subEl   = document.getElementById('td-steps-sub');
   const s = getStepsToday();
   if (!s) {
-    document.getElementById('td-steps-val').textContent = '—';
-    document.getElementById('td-steps-sub').textContent = 'Tap Log Steps to add today\'s count';
-    document.getElementById('td-steps-bar').style.width = '0%';
+    valEl.textContent = '—';
+    if (subEl) subEl.textContent = 'Tap Log Steps to add today\'s count';
+    if (barEl) barEl.style.width = '0%';
     return;
   }
   const pct = Math.min(100, Math.round((s.steps / s.goal) * 100));
   const remaining = s.goal - s.steps;
-  document.getElementById('td-steps-val').textContent = s.steps.toLocaleString();
-  document.getElementById('td-steps-goal').textContent = '/ ' + s.goal.toLocaleString();
-  document.getElementById('td-steps-bar').style.width = pct + '%';
-  document.getElementById('td-steps-bar').style.background = pct >= 100 ? 'var(--gold)' : 'var(--green)';
-  document.getElementById('td-steps-sub').textContent = pct >= 100
+  valEl.textContent = s.steps.toLocaleString();
+  if (goalEl) goalEl.textContent = '/ ' + s.goal.toLocaleString();
+  if (barEl) {
+    barEl.style.width = pct + '%';
+    barEl.style.background = pct >= 100 ? 'var(--gold)' : 'var(--green)';
+  }
+  if (subEl) subEl.textContent = pct >= 100
     ? '🏆 Goal hit! ' + s.steps.toLocaleString() + ' steps'
     : remaining.toLocaleString() + ' steps to go · ' + pct + '%';
 }
@@ -1484,7 +1493,7 @@ renderAll();
 
 // ─── TRAINING SEED ─── (separate version key — runs independently of food)
 (function() {
-  const TRAIN_V = 'v1';
+  const TRAIN_V = 'v2';
   const APR20   = '2026-04-20';
   if (getStore('training_seed_version','') !== TRAIN_V) {
     // Apr 20: Deadlift focus — 5 sets top set 295×5 @RPE8 (superset box jumps)
