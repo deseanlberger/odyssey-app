@@ -1352,32 +1352,55 @@ renderAll();
   }
 })();
 
-// ─── FOOD HISTORY SEED ───
-// v3 — corrected Ninja Creami macros (Fairlife 240ml + Gold Standard + strawberries + creatine)
-// Version flag forces overwrite if previous seed version was loaded
+// ─── FOOD & TRAINING HISTORY SEED ───
+// v4 — added Apr 20 training session + deadlift PR
 (function() {
-  const SEED_V = 'v3';
+  const SEED_V = 'v4';
   const APR19  = '2026-04-19';
   const APR20  = '2026-04-20';
 
   if (getStore('food_seed_version','') !== SEED_V) {
-    // Apr 19 — 2x ribeye 12oz + Ninja Creami
-    // Ninja Creami breakdown:
-    //   Fairlife 2% 240ml: 120 cal, 13g pro, 4.5g fat, 6g carbs
-    //   Gold Standard Whey vanilla 1 scoop: 120 cal, 24g pro, 1.5g fat, 3g carbs
-    //   Frozen strawberries ~75g: 25 cal, 0.5g pro, 0g fat, 6g carbs
-    //   Creatine 5g: 0 cal
-    //   Total: 265 cal, 38g pro, 6g fat, 15g carbs
+
+    // ── FOOD ──
     setStore('meals_'+APR19, [
       { id: 1745100001, name: 'Ribeye steak 12oz', protein: 68, calories: 780, carbs: 0, fat: 54, slot: 'dinner', logged_at: APR19+'T18:00:00Z' },
       { id: 1745100002, name: 'Ribeye steak 12oz', protein: 68, calories: 780, carbs: 0, fat: 54, slot: 'dinner', logged_at: APR19+'T18:30:00Z' },
       { id: 1745100003, name: 'Ninja Creami (Fairlife 240ml + Gold Standard vanilla + strawberries + creatine)', protein: 38, calories: 265, carbs: 15, fat: 6, slot: 'snack', logged_at: APR19+'T20:00:00Z' },
     ]);
-
-    // Apr 20 — smaller bowl from beef/black bean/corn pot (1 of 5 portions)
     setStore('meals_'+APR20, [
-      { id: 1745200001, name: 'Beef, black bean & corn bowl (pot meal — small portion)', protein: 50, calories: 520, carbs: 24, fat: 25, slot: 'lunch', logged_at: APR20+'T13:00:00Z' },
+      { id: 1745200001, name: 'Beef, black bean & corn bowl (small portion)', protein: 50, calories: 520, carbs: 24, fat: 25, slot: 'lunch', logged_at: APR20+'T13:00:00Z' },
     ]);
+
+    // ── TRAINING — Apr 20 ──
+    // Deadlift 5 sets → top set 295 × 5 @ RPE 8 (superset w/ box jumps)
+    // Incline DB bench 45s × 4 × 8
+    // Pull-ups ~30 reps total (~4 sets)
+    // OHP 115–120 × ~25 reps total (~3 sets)
+    // Tricep pushdowns ~3 sets
+    // TRX rows ~3 sets
+    const sessionHistory = getStore('session_history', []);
+    const alreadyLogged = sessionHistory.find(s => s.date === APR20);
+    if (!alreadyLogged) {
+      sessionHistory.unshift({
+        date: APR20,
+        type: 'Lower / Full Body — Deadlift Focus',
+        sets_done: 25,
+        sets_total: 25,
+        feel: 'solid',
+        knee_pain_flag: false,
+        completed_at: APR20+'T16:00:00Z',
+        notes: 'Deadlift: 5 sets, top set 295×5 @RPE8 (superset w/ box jumps) | Incline DB bench: 45s × 4×8 | Pull-ups: ~30 reps total | OHP: 115–120 × ~25 reps | Tricep pushdowns: 3 sets | TRX rows: 3 sets',
+      });
+      setStore('session_history', sessionHistory);
+    }
+
+    // ── PR — Deadlift 295 × 5 ──
+    const prs = getStore('prs', []);
+    const dlPr = prs.find(p => p.lift === 'Deadlift');
+    if (!dlPr) {
+      prs.unshift({ lift: 'Deadlift', detail: '295 lbs × 5 reps @ RPE 8', date: APR20 });
+      setStore('prs', prs);
+    }
 
     setStore('food_seed_version', SEED_V);
     renderAll();
