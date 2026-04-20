@@ -10,7 +10,7 @@
 <script>
 // Force fresh load when app version changes — prevents stale PWA cache issues
 (function(){
-  var V='6';
+  var V='7';
   if(localStorage.getItem('_appver')!==V){
     localStorage.setItem('_appver',V);
     if(!sessionStorage.getItem('_rel'+V)){
@@ -299,6 +299,20 @@
         <div class="mini-chart" id="weight-chart"></div>
       </div>
 
+      <!-- STEPS CARD -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin-bottom:0">Daily Steps</div>
+          <button class="btn btn-secondary btn-sm" onclick="openStepsModal()">Log Steps</button>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:8px">
+          <div style="font-size:36px;font-weight:800;color:var(--green);line-height:1" id="td-steps-val">—</div>
+          <div style="font-size:14px;color:var(--text-dim);padding-bottom:4px" id="td-steps-goal">/ 10,000</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="td-steps-bar" style="width:0%;background:var(--green)"></div></div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px" id="td-steps-sub"></div>
+      </div>
+
       <!-- TODAY'S SESSION CARD -->
       <div class="card" id="td-session-card" style="cursor:pointer" onclick="goToTrain()">
         <div class="card-title">Today's Session</div>
@@ -430,6 +444,12 @@
         <div id="weight-history"></div>
       </div>
 
+      <!-- STEPS HISTORY -->
+      <div class="card">
+        <div class="card-title">Step Count History</div>
+        <div id="steps-history"></div>
+      </div>
+
       <!-- PR BOARD -->
       <div class="card">
         <div class="card-title">PR Board</div>
@@ -549,6 +569,19 @@
     <label class="label">Notes for next session</label>
     <textarea id="debrief-notes" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;resize:none;height:70px;margin-bottom:10px"></textarea>
     <button class="btn btn-primary" onclick="saveDebrief()">Save Session</button>
+  </div>
+</div>
+
+<!-- Steps Modal -->
+<div class="modal-overlay hidden" id="steps-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('steps-modal')">×</button>
+    <div class="modal-title">Log Steps</div>
+    <label class="label">Steps today</label>
+    <input type="number" id="steps-input" placeholder="e.g. 10000" inputmode="numeric">
+    <label class="label">Goal (default 10,000)</label>
+    <input type="number" id="steps-goal-input" placeholder="10000" inputmode="numeric">
+    <button class="btn btn-primary" onclick="saveSteps()">Save</button>
   </div>
 </div>
 
@@ -985,6 +1018,7 @@ function renderAll() {
   renderNutritionTab();
   renderProgramTab();
   renderStatsTab();
+  renderStepsCard();
 }
 
 function renderTodayTab() {
@@ -1275,6 +1309,24 @@ function renderStatsTab() {
     document.getElementById('weight-history').innerHTML = '<div class="text-dim text-sm">No weight entries yet.</div>';
   }
 
+  // Steps history
+  const stepsLog = getStepsLog();
+  if (stepsLog.length) {
+    document.getElementById('steps-history').innerHTML = stepsLog.slice().reverse().slice(0, 14).map(s => {
+      const pct = Math.min(100, Math.round((s.steps / s.goal) * 100));
+      const hit = s.steps >= s.goal;
+      return `<div class="stat-row">
+        <span class="stat-label">${fmtDateShort(s.date)}</span>
+        <span class="stat-val" style="color:${hit ? 'var(--gold)' : 'var(--green)'}">
+          ${s.steps.toLocaleString()} ${hit ? '🏆' : ''}
+          <span class="text-dim" style="font-weight:400;font-size:11px"> / ${s.goal.toLocaleString()} (${pct}%)</span>
+        </span>
+      </div>`;
+    }).join('');
+  } else {
+    document.getElementById('steps-history').innerHTML = '<div class="text-dim text-sm">No steps logged yet.</div>';
+  }
+
   // PRs
   const prs = getStore('prs', []);
   if (prs.length) {
@@ -1297,6 +1349,53 @@ function renderStatsTab() {
   } else {
     document.getElementById('session-history-stats').innerHTML = '<div class="text-dim text-sm">No sessions logged yet.</div>';
   }
+}
+
+// ─── STEPS ───
+const STEP_GOAL_DEFAULT = 10000;
+
+function getStepsToday() { return getStore('steps_'+TODAY_STR, null); }
+function getStepsLog() { return getStore('steps_log', []); }
+
+function openStepsModal() {
+  const s = getStepsToday();
+  document.getElementById('steps-input').value = s ? s.steps : '';
+  document.getElementById('steps-goal-input').value = s ? s.goal : STEP_GOAL_DEFAULT;
+  document.getElementById('steps-modal').classList.remove('hidden');
+}
+
+function saveSteps() {
+  const steps = parseInt(document.getElementById('steps-input').value) || 0;
+  const goal = parseInt(document.getElementById('steps-goal-input').value) || STEP_GOAL_DEFAULT;
+  if (!steps) { showToast('Enter your step count'); return; }
+  const entry = { date: TODAY_STR, steps, goal, logged_at: new Date().toISOString() };
+  setStore('steps_'+TODAY_STR, entry);
+  const log = getStepsLog().filter(x => x.date !== TODAY_STR);
+  log.push(entry);
+  log.sort((a,b) => a.date.localeCompare(b.date));
+  setStore('steps_log', log);
+  closeModal('steps-modal');
+  renderAll();
+  showToast(steps.toLocaleString() + ' steps logged');
+}
+
+function renderStepsCard() {
+  const s = getStepsToday();
+  if (!s) {
+    document.getElementById('td-steps-val').textContent = '—';
+    document.getElementById('td-steps-sub').textContent = 'Tap Log Steps to add today\'s count';
+    document.getElementById('td-steps-bar').style.width = '0%';
+    return;
+  }
+  const pct = Math.min(100, Math.round((s.steps / s.goal) * 100));
+  const remaining = s.goal - s.steps;
+  document.getElementById('td-steps-val').textContent = s.steps.toLocaleString();
+  document.getElementById('td-steps-goal').textContent = '/ ' + s.goal.toLocaleString();
+  document.getElementById('td-steps-bar').style.width = pct + '%';
+  document.getElementById('td-steps-bar').style.background = pct >= 100 ? 'var(--gold)' : 'var(--green)';
+  document.getElementById('td-steps-sub').textContent = pct >= 100
+    ? '🏆 Goal hit! ' + s.steps.toLocaleString() + ' steps'
+    : remaining.toLocaleString() + ' steps to go · ' + pct + '%';
 }
 
 // ─── MODALS ───
@@ -1409,6 +1508,13 @@ renderAll();
     prs = prs.filter(function(p){ return p.lift !== 'Deadlift'; }); // remove duplicate
     prs.unshift({ lift: 'Deadlift', detail: '295 lbs × 5 reps @ RPE 8', date: APR20 });
     setStore('prs', prs);
+
+    // Apr 20 steps — 7,060 from Apple Fitness
+    var stepsLog = getStepsLog().filter(function(x){ return x.date !== APR20; });
+    stepsLog.push({ date: APR20, steps: 7060, goal: 10000, logged_at: APR20+'T23:59:00Z' });
+    stepsLog.sort(function(a,b){ return a.date.localeCompare(b.date); });
+    setStore('steps_log', stepsLog);
+    setStore('steps_'+APR20, { date: APR20, steps: 7060, goal: 10000, logged_at: APR20+'T23:59:00Z' });
 
     setStore('training_seed_version', TRAIN_V);
   }
